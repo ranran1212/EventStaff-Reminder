@@ -1,15 +1,36 @@
+# send_sms.py
 import os
-from twilio.rest import Client
+import vonage
 
-TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID")
-TWILIO_AUTH_TOKEN  = os.environ.get("TWILIO_AUTH_TOKEN")
-TWILIO_PHONE_NUMBER = os.environ.get("TWILIO_PHONE_NUMBER")
+VONAGE_API_KEY = os.environ.get("VONAGE_API_KEY")
+VONAGE_API_SECRET = os.environ.get("VONAGE_API_SECRET")
+VONAGE_VIRTUAL_NUMBER = os.environ.get("VONAGE_VIRTUAL_NUMBER")
+"""
+例:
+VONAGE_API_KEY=xxxx
+VONAGE_API_SECRET=yyyy
+VONAGE_VIRTUAL_NUMBER=+1234567890
+"""
 
 def send_sms(to_number: str, message_body: str):
-    client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-    message = client.messages.create(
-        body=message_body,
-        from_=TWILIO_PHONE_NUMBER,
-        to=to_number
+    """
+    Vonage APIを使ってSMSを送信
+    :param to_number: 送信先電話番号 (国際形式)
+    :param message_body: 送信する本文
+    """
+    client = vonage.Client(key=VONAGE_API_KEY, secret=VONAGE_API_SECRET)
+    sms = vonage.Sms(client)
+
+    responseData = sms.send_message(
+        {
+            "from": VONAGE_VIRTUAL_NUMBER,
+            "to": to_number,
+            "text": message_body,
+        }
     )
-    print(f"Sent Message SID: {message.sid}")
+
+    # レスポンスを確認
+    if responseData["messages"][0]["status"] == "0":
+        print(f"Sent message to {to_number} successfully.")
+    else:
+        print(f"Failed to send message: {responseData['messages'][0]['error-text']}")
