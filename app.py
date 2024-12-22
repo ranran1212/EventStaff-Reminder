@@ -5,7 +5,7 @@ from datetime import datetime
 import os
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "postgresql://eventstaff_reminder_database_user:RheFakdMI2wOOH6T6jMdwPxiWun3SBEI@dpg-ctk1ggdumphs73fdo7fg-a/eventstaff_reminder_database")
 db = SQLAlchemy(app)
 
 # Flask-Migrate 初期化
