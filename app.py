@@ -18,13 +18,13 @@ def check_and_send_sms():
     1分おきに呼ばれるジョブ。
     'scheduled_messages' から送信すべきSMSを探してTwilio送信する。
     """
-    now = datetime()
+    now = datetime.now()
     for msg in scheduled_messages:
         # 送信済みでない & 予定時刻 <= 現在時刻
         if msg["sent_at"] is None and msg["scheduled_time"] <= now:
             try:
                 send_sms(msg["phone_number"], msg["message_body"])
-                msg["sent_at"] = datetime()
+                msg["sent_at"] = datetime.now()
                 print(f"Sent SMS to {msg['phone_number']}")
             except Exception as e:
                 print(f"Error sending SMS to {msg['phone_number']}: {e}")
