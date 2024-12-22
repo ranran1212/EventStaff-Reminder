@@ -24,7 +24,6 @@ def index():
     if request.method == "POST":
         phone_numbers = request.form.getlist("phone_number[]")
         message_bodies = request.form.getlist("message_body[]")
-        print(message_bodies)
         scheduled_times = request.form.getlist("scheduled_time[]")
 
         for i in range(len(phone_numbers)):
