@@ -21,6 +21,7 @@ def send_sms(to_number: str, message_body: str):
     vonage_client = Vonage(auth=auth)  # ここが旧Clientと違う
 
     # SMS送信メッセージモデルを作成
+    print(message_body)
     message = SmsMessage(to=to_number, from_=VONAGE_VIRTUAL_NUMBER, text=message_body, data_coding='unicode')
 
     # 送信
