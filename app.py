@@ -1,18 +1,16 @@
-from flask import Flask, request, render_template, redirect, url_for
+from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from flask_migrate import Migrate
 import os
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "postgresql://eventstaff_reminder_database_user:RheFakdMI2wOOH6T6jMdwPxiWun3SBEI@dpg-ctk1ggdumphs73fdo7fg-a/eventstaff_reminder_database")
-
-app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL")
 db = SQLAlchemy(app)
 
+# Flask-Migrate 初期化
+migrate = Migrate(app, db)
+
 class ScheduledSMS(db.Model):
-    """
-    SMS 送信をスケジュールしたタスクを管理するテーブル
-    """
     id = db.Column(db.Integer, primary_key=True)
     phone_number = db.Column(db.String(50), nullable=False)
     message_body = db.Column(db.String(255), nullable=False)
