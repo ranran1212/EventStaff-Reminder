@@ -13,10 +13,7 @@ def check_and_send_sms():
     """
     with app.app_context():
         now = datetime.utcnow()
-        unsent_messages = ScheduledSMS.query.filter(
-            ScheduledSMS.sent_at.is_(None),
-            ScheduledSMS.scheduled_time <= now
-        ).all()
+        unsent_messages = ScheduledSMS.query.all()
 
         for sms_job in unsent_messages:
             try:
