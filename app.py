@@ -1,14 +1,16 @@
+# app.py
 from flask import Flask, request, render_template, redirect, url_for
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
-from send_sms import send_sms
+import os
+
+from send_sms import send_sms  # VonageでのSMS送信
 
 app = Flask(__name__)
 
-# メモリ上で管理するスケジュールリスト
-# 例: [{"id": 1, "phone_number": "+81...", "message_body": "...", "scheduled_time": datetime(2025,1,1,9,0), "sent_at": None}, ...]
+# メモリ上でスケジュールデータを保持 (再起動で消える)
 scheduled_messages = []
-next_id = 1  # メモリ上で採番する簡易的なID
+next_id = 1
 
 # APScheduler
 scheduler = BackgroundScheduler()
@@ -16,20 +18,18 @@ scheduler = BackgroundScheduler()
 def check_and_send_sms():
     """
     1分おきに呼ばれるジョブ。
-    'scheduled_messages' から送信すべきSMSを探してTwilio送信する。
+    送信予定時刻 <= 現在時刻 & 未送信のSMSを探してVonageで送信し、sent_atを更新する
     """
-    now = datetime.now()
+    now = datetime.utcnow()
     for msg in scheduled_messages:
-        # 送信済みでない & 予定時刻 <= 現在時刻
         if msg["sent_at"] is None and msg["scheduled_time"] <= now:
             try:
                 send_sms(msg["phone_number"], msg["message_body"])
-                msg["sent_at"] = datetime.now()
-                print(f"Sent SMS to {msg['phone_number']}")
+                msg["sent_at"] = datetime.utcnow()
             except Exception as e:
                 print(f"Error sending SMS to {msg['phone_number']}: {e}")
 
-# APSchedulerのジョブ登録: 1分ごとに check_and_send_sms
+# ジョブを1分間隔で実行
 scheduler.add_job(check_and_send_sms, 'interval', minutes=1)
 scheduler.start()
 
@@ -38,7 +38,6 @@ def index():
     global next_id
 
     if request.method == "POST":
-        # フォームから受け取った複数行分のデータ
         phone_numbers = request.form.getlist("phone_number[]")
         message_bodies = request.form.getlist("message_body[]")
         scheduled_times = request.form.getlist("scheduled_time[]")
@@ -46,11 +45,11 @@ def index():
         for i in range(len(phone_numbers)):
             phone_number = phone_numbers[i]
             message_body = message_bodies[i]
-            scheduled_time_str = scheduled_times[i]
+            scheduled_str = scheduled_times[i]
 
-            # 文字列 "2025-01-01 09:00" などを datetime に変換
-            # タイムゾーンはUTC前提にしています。日本時間は別途対応が必要
-            scheduled_dt = datetime.strptime(scheduled_time_str, "%Y-%m-%dT%H:%M")
+            # HTML5 datetime-localの場合、"YYYY-MM-DDTHH:MM" 形式になる
+            # "2025-01-01T09:00" のような文字列を datetime にパース
+            scheduled_dt = datetime.strptime(scheduled_str, "%Y-%m-%dT%H:%M")
 
             new_msg = {
                 "id": next_id,
@@ -64,15 +63,19 @@ def index():
 
         return redirect(url_for("index"))
 
-    # 一覧表示用: メモリ上の scheduled_messages を送る
+    # GET: 一覧表示
     return render_template("index.html", scheduled_sms_list=scheduled_messages)
 
 @app.route("/delete", methods=["POST"])
 def delete_message():
+    """
+    一覧から削除するボタンを押されたときに呼ばれる
+    """
     message_id = int(request.form.get("message_id"))
     global scheduled_messages
     scheduled_messages = [ msg for msg in scheduled_messages if msg["id"] != message_id ]
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
+    # ローカル実行用
     app.run(debug=True)
