@@ -4,8 +4,11 @@ from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 import os
 import pytz
+
+# Vonage等のSMS送信用モジュール
 from send_sms import send_sms
 
+# --- ここで JST を定義 ---
 JST = pytz.timezone("Asia/Tokyo")
 
 app = Flask(__name__)
@@ -18,27 +21,35 @@ next_id = 1
 scheduler = BackgroundScheduler()
 
 def get_jst_now():
+    """現在のJST時刻を返す"""
     return datetime.now(JST)
 
 def parse_jst_datetime(input_str):
-    # "2024-12-31T09:00" → naive dt
+    """
+    HTML5のdatetime-localで入力された文字列(例: "2025-01-01T09:00")を
+    JSTの datetimeオブジェクトに変換する
+    """
     naive_dt = datetime.strptime(input_str, "%Y-%m-%dT%H:%M")
-    return JST.localize(naive_dt)
+    jst_dt = JST.localize(naive_dt)  # "naive"なdtをJSTタイムゾーン付きdtに
+    return jst_dt
 
 def check_and_send_sms():
-    print("DEBUG: APScheduler job started.")
     """
     1分おきに呼ばれるジョブ。
-    送信予定時刻 <= 現在時刻 & 未送信のSMSを探してVonageで送信し、sent_atを更新する
+    [送信予定時刻 <= 現在JST] & 未送信 のメッセージをVonageで送信し、sent_atをJSTで更新
     """
     now_jst = get_jst_now()
+    print("DEBUG: APScheduler job started.")
     print(f"check_and_send_sms called at {now_jst}")
+
     for msg in scheduled_messages:
         print(f"DEBUG: checking msg.id={msg['id']} at {now_jst}, scheduled={msg['scheduled_time']}")
-        if msg["scheduled_time"] <= now_jst and msg["sent_at"] is None:
+        # scheduled_timeとsent_atの比較もJSTで行う
+        if msg["sent_at"] is None and msg["scheduled_time"] <= now_jst:
             try:
                 send_sms(msg["phone_number"], msg["message_body"])
-                msg["sent_at"] = datetime.utcnow()
+                # 送信完了したら JST の現在時刻を記録
+                msg["sent_at"] = get_jst_now()
             except Exception as e:
                 print(f"Error sending SMS to {msg['phone_number']}: {e}")
 
@@ -60,15 +71,14 @@ def index():
             message_body = message_bodies[i]
             scheduled_str = scheduled_times[i]
 
-            # HTML5 datetime-localの場合、"YYYY-MM-DDTHH:MM" 形式になる
-            # "2025-01-01T09:00" のような文字列を datetime にパース
-            scheduled_dt = datetime.strptime(scheduled_str, "%Y-%m-%dT%H:%M")
+            # "2025-01-01T09:00" (HTML5 datetime-local) → JSTのdatetime
+            scheduled_dt = parse_jst_datetime(scheduled_str)
 
             new_msg = {
                 "id": next_id,
                 "phone_number": phone_number,
                 "message_body": message_body,
-                "scheduled_time": scheduled_dt,
+                "scheduled_time": scheduled_dt,  # JSTで保持
                 "sent_at": None
             }
             scheduled_messages.append(new_msg)
@@ -86,7 +96,7 @@ def delete_message():
     """
     message_id = int(request.form.get("message_id"))
     global scheduled_messages
-    scheduled_messages = [ msg for msg in scheduled_messages if msg["id"] != message_id ]
+    scheduled_messages = [m for m in scheduled_messages if m["id"] != message_id]
     return redirect(url_for("index"))
 
 if __name__ == "__main__":
