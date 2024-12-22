@@ -22,6 +22,7 @@ def check_and_send_sms():
     """
     now = datetime.utcnow()
     for msg in scheduled_messages:
+        print(f"DEBUG: checking msg.id={msg['id']} at {now}, scheduled={msg['scheduled_time']}")
         if msg["sent_at"] is None and msg["scheduled_time"] <= now:
             try:
                 send_sms(msg["phone_number"], msg["message_body"])
