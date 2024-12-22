@@ -1,11 +1,13 @@
 from flask import Flask, request, render_template, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
-import os
+from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
+import os
+from send_sms import send_sms
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get("DATABASE_URL", "sqlite:///test.db")
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///test.db")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 class ScheduledSMS(db.Model):
@@ -15,9 +17,32 @@ class ScheduledSMS(db.Model):
     scheduled_time = db.Column(db.DateTime, nullable=False)
     sent_at = db.Column(db.DateTime, nullable=True)
 
-# DB初期化 (必要に応じて)
+# DB初期化(本番ではFlask-Migrateが望ましい)
 db.create_all()
 
+# APScheduler 設定
+scheduler = BackgroundScheduler()
+
+def check_and_send_sms():
+    with app.app_context():  # コンテキスト必須
+        now = datetime.utcnow()
+        unsent_messages = ScheduledSMS.query.filter(
+            ScheduledSMS.sent_at.is_(None),
+            ScheduledSMS.scheduled_time <= now
+        ).all()
+
+        for sms_job in unsent_messages:
+            try:
+                send_sms(sms_job.phone_number, sms_job.message_body)
+                sms_job.sent_at = datetime.utcnow()
+                db.session.commit()
+            except Exception as e:
+                print(f"Error sending SMS to {sms_job.phone_number}: {e}")
+
+scheduler.add_job(check_and_send_sms, 'interval', minutes=1)
+scheduler.start()
+
+# Flaskルート
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
@@ -25,16 +50,12 @@ def index():
         message_bodies = request.form.getlist("message_body[]")
         scheduled_times = request.form.getlist("scheduled_time[]")
 
-        # 各行ごとにDBへ保存
         for i in range(len(phone_numbers)):
             phone_number = phone_numbers[i]
             message_body = message_bodies[i]
             scheduled_time_str = scheduled_times[i]
-            
-            # 文字列 -> datetime型
-            # 例: 2024-12-31 09:00
-            scheduled_time = datetime.strptime(scheduled_time_str, "%Y-%m-%d %H:%M")
 
+            scheduled_time = datetime.strptime(scheduled_time_str, "%Y-%m-%d %H:%M")
             new_sms = ScheduledSMS(
                 phone_number=phone_number,
                 message_body=message_body,
@@ -43,9 +64,8 @@ def index():
             db.session.add(new_sms)
 
         db.session.commit()
-        return redirect(url_for('index'))
+        return redirect(url_for("index"))
 
-    # 登録したスケジュールの一覧を表示
     scheduled_sms_list = ScheduledSMS.query.order_by(ScheduledSMS.scheduled_time).all()
     return render_template("index.html", scheduled_sms_list=scheduled_sms_list)
 
