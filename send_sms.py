@@ -22,7 +22,7 @@ def send_sms(to_number: str, message_body: str):
 
     # SMS送信メッセージモデルを作成
     print(message_body)
-    message = SmsMessage(to=to_number, from_=VONAGE_VIRTUAL_NUMBER, text=message_body, data_coding='unicode')
+    message = SmsMessage(to=to_number, from_=VONAGE_VIRTUAL_NUMBER, text=message_body, data_coding='utf-8')
 
     # 送信
     response: SmsResponse = vonage_client.sms.send(message)
