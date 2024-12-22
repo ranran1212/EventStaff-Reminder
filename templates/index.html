@@ -3,7 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>SMS送信スケジューラー</title>
-    <!-- スタイルを適用 -->
     <style>
         body {
             font-family: "ヒラギノ角ゴ ProN", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
@@ -24,15 +23,6 @@
             color: #333333;
             margin-bottom: 40px;
         }
-        p {
-            font-size: 16px;
-            color: #555555;
-        }
-        input[type="file"] {
-            display: block;
-            margin: 20px 0;
-            font-size: 16px;
-        }
         input[type="submit"],
         button[type="submit"],
         button[type="button"] {
@@ -52,19 +42,6 @@
         button[type="button"]:hover {
             background-color: #0056b3;
         }
-        .message {
-            margin-top: 20px;
-            font-size: 16px;
-            color: #28a745;
-        }
-        @media screen and (max-width: 768px) {
-            .container {
-                width: 80%;
-                margin: 50px auto;
-            }
-        }
-
-        /* 追加の調整用 */
         .input-row {
             margin-bottom: 20px;
         }
@@ -74,7 +51,8 @@
             margin-bottom: 4px;
             font-weight: bold;
         }
-        input[type="text"] {
+        input[type="tel"],
+        input[type="datetime-local"] {
             width: 100%;
             margin-bottom: 8px;
             padding: 8px;
@@ -112,14 +90,30 @@
                 <!-- 初期表示用のフォームブロック -->
                 <div class="input-row">
                     <label>宛先</label>
-                    <input type="text" name="phone_number[]" placeholder="+8180XXXXXXX" required>
+                    <input
+                        type="tel"
+                        name="phone_number[]"
+                        pattern="^\\+?[0-9]{7,15}$"
+                        placeholder="例）+8180xxxxxxx"
+                        title="国際形式か、数字のみ7~15桁を入力してください"
+                        required
+                    >
 
                     <label>メッセージ</label>
-                    <!-- 700文字程度入るように、十分な行数・maxlengthを指定 -->
-                    <textarea name="message_body[]" rows="6" maxlength="700" placeholder="本文を入力してください（最大700文字）" required></textarea>
+                    <textarea
+                        name="message_body[]"
+                        rows="6"
+                        maxlength="700"
+                        placeholder="本文を入力してください（最大700文字）"
+                        required
+                    ></textarea>
 
-                    <label>送信日時 (YYYY-MM-DD HH:MM)</label>
-                    <input type="text" name="scheduled_time[]" placeholder="例）2025-01-01 09:00" required>
+                    <label>送信日時</label>
+                    <input
+                        type="datetime-local"
+                        name="scheduled_time[]"
+                        required
+                    >
                 </div>
             </div>
 
@@ -138,8 +132,8 @@
                 <th>メッセージ</th>
                 <th>送信予定日時</th>
                 <th>送信日時</th>
+                <th>操作</th>
             </tr>
-            <!-- Flaskのテンプレートで行を繰り返し表示する想定 -->
             {% for sms in scheduled_sms_list %}
             <tr>
                 <td>{{ sms.id }}</td>
@@ -147,6 +141,13 @@
                 <td>{{ sms.message_body }}</td>
                 <td>{{ sms.scheduled_time }}</td>
                 <td>{{ sms.sent_at }}</td>
+                <td>
+                    <!-- 削除ボタン: /delete へ POST -->
+                    <form method="POST" action="/delete" style="display:inline;">
+                        <input type="hidden" name="message_id" value="{{ sms.id }}">
+                        <button type="submit">×</button>
+                    </form>
+                </td>
             </tr>
             {% endfor %}
         </table>
@@ -157,18 +158,34 @@
         function addRow() {
             const container = document.getElementById("inputContainer");
 
-            // 新しく追加する入力欄
             const newRow = document.createElement("div");
             newRow.classList.add("input-row");
             newRow.innerHTML = `
                 <label>宛先</label>
-                <input type="text" name="phone_number[]" placeholder="+8180XXXXXXX" required>
+                <input
+                    type="tel"
+                    name="phone_number[]"
+                    pattern="^\\+?[0-9]{7,15}$"
+                    placeholder="例）+8190xxxxxxx"
+                    title="国際形式か、数字のみ7~15桁を入力してください"
+                    required
+                >
 
                 <label>メッセージ</label>
-                <textarea name="message_body[]" rows="6" maxlength="700" placeholder="本文を入力してください（最大700文字）" required></textarea>
+                <textarea
+                    name="message_body[]"
+                    rows="6"
+                    maxlength="700"
+                    placeholder="本文を入力してください（最大700文字）"
+                    required
+                ></textarea>
 
-                <label>送信日時 (YYYY-MM-DD HH:MM)</label>
-                <input type="text" name="scheduled_time[]" placeholder="例）2025-01-01 09:00" required>
+                <label>送信日時</label>
+                <input
+                    type="datetime-local"
+                    name="scheduled_time[]"
+                    required
+                >
             `;
 
             container.appendChild(newRow);
