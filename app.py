@@ -50,7 +50,7 @@ def index():
 
             # 文字列 "2025-01-01 09:00" などを datetime に変換
             # タイムゾーンはUTC前提にしています。日本時間は別途対応が必要
-            scheduled_dt = datetime.strptime(scheduled_time_str, "%Y-%m-%d %H:%M")
+            scheduled_dt = datetime.strptime(scheduled_time_str, "%Y-%m-%dT%H:%M")
 
             new_msg = {
                 "id": next_id,
