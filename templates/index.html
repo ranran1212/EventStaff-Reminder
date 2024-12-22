@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>SMS送信スケジューラー</title>
+    <!-- スタイルを適用 -->
+    <style>
+        body {
+            font-family: "ヒラギノ角ゴ ProN", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+            background-color: #f0f0f0;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 80%;
+            margin: 100px auto;
+            background-color: #ffffff;
+            padding: 40px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+        }
+        h1 {
+            text-align: center;
+            color: #333333;
+            margin-bottom: 40px;
+        }
+        p {
+            font-size: 16px;
+            color: #555555;
+        }
+        input[type="file"] {
+            display: block;
+            margin: 20px 0;
+            font-size: 16px;
+        }
+        input[type="submit"],
+        button[type="submit"],
+        button[type="button"] {
+            background-color: #007BFF;
+            color: #ffffff;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            margin-right: 8px;
+            margin-top: 20px;
+        }
+        input[type="submit"]:hover,
+        button[type="submit"]:hover,
+        button[type="button"]:hover {
+            background-color: #0056b3;
+        }
+        .message {
+            margin-top: 20px;
+            font-size: 16px;
+            color: #28a745;
+        }
+        @media screen and (max-width: 768px) {
+            .container {
+                width: 80%;
+                margin: 50px auto;
+            }
+        }
+
+        /* 追加の調整用 */
+        .input-row {
+            margin-bottom: 20px;
+        }
+        label {
+            display: inline-block;
+            margin-right: 8px;
+            margin-bottom: 4px;
+            font-weight: bold;
+        }
+        input[type="text"] {
+            width: 100%;
+            margin-bottom: 8px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+            margin-bottom: 8px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        table th,
+        table td {
+            border: 1px solid #ccc;
+            padding: 8px;
+            text-align: left;
+        }
+        table th {
+            background-color: #f9f9f9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SMS送信スケジューラー</h1>
+
+        <!-- フォーム -->
+        <form method="POST">
+            <div id="inputContainer">
+                <!-- 初期表示用のフォームブロック -->
+                <div class="input-row">
+                    <label>宛先</label>
+                    <input type="text" name="phone_number[]" placeholder="+8180XXXXXXX" required>
+
+                    <label>メッセージ</label>
+                    <!-- 700文字程度入るように、十分な行数・maxlengthを指定 -->
+                    <textarea name="message_body[]" rows="6" maxlength="700" placeholder="本文を入力してください（最大700文字）" required></textarea>
+
+                    <label>送信日時 (YYYY-MM-DD HH:MM)</label>
+                    <input type="text" name="scheduled_time[]" placeholder="例）2025-01-01 09:00" required>
+                </div>
+            </div>
+
+            <!-- +ボタン: 入力欄追加 -->
+            <button type="button" onclick="addRow()">+</button>
+            <!-- 送信ボタン -->
+            <button type="submit">送信</button>
+        </form>
+
+        <hr>
+        <h2>登録済みメッセージ一覧</h2>
+        <table>
+            <tr>
+                <th>ID</th>
+                <th>宛先</th>
+                <th>メッセージ</th>
+                <th>送信予定日時</th>
+                <th>送信日時</th>
+            </tr>
+            <!-- Flaskのテンプレートで行を繰り返し表示する想定 -->
+            {% for sms in scheduled_sms_list %}
+            <tr>
+                <td>{{ sms.id }}</td>
+                <td>{{ sms.phone_number }}</td>
+                <td>{{ sms.message_body }}</td>
+                <td>{{ sms.scheduled_time }}</td>
+                <td>{{ sms.sent_at }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <!-- JavaScript: +ボタンで行を追加する -->
+    <script>
+        function addRow() {
+            const container = document.getElementById("inputContainer");
+
+            // 新しく追加する入力欄
+            const newRow = document.createElement("div");
+            newRow.classList.add("input-row");
+            newRow.innerHTML = `
+                <label>宛先</label>
+                <input type="text" name="phone_number[]" placeholder="+8180XXXXXXX" required>
+
+                <label>メッセージ</label>
+                <textarea name="message_body[]" rows="6" maxlength="700" placeholder="本文を入力してください（最大700文字）" required></textarea>
+
+                <label>送信日時 (YYYY-MM-DD HH:MM)</label>
+                <input type="text" name="scheduled_time[]" placeholder="例）2025-01-01 09:00" required>
+            `;
+
+            container.appendChild(newRow);
+        }
+    </script>
+</body>
+</html>
