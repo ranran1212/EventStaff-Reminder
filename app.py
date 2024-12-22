@@ -19,6 +19,8 @@ class ScheduledSMS(db.Model):
     scheduled_time = db.Column(db.DateTime, nullable=False)
     sent_at = db.Column(db.DateTime, nullable=True)
 
+db.create_all()
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     if request.method == "POST":
