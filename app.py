@@ -12,7 +12,7 @@ from models import db, ScheduledSMS  # モデルとdbオブジェクト
 def create_app():
     app = Flask(__name__)
     # DB接続設定
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "sqlite:///test.db")
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", "postgresql://eventstaff_reminder_database_user:RheFakdMI2wOOH6T6jMdwPxiWun3SBEI@dpg-ctk1ggdumphs73fdo7fg-a/eventstaff_reminder_database")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
     # DB初期化
