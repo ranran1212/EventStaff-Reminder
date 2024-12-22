@@ -18,7 +18,7 @@ class ScheduledSMS(db.Model):
     sent_at = db.Column(db.DateTime, nullable=True)
 
 def check_and_send_sms():
-    now = datetime()
+    now = datetime.utcnow()
     unsent_messages = ScheduledSMS.query.filter(
         ScheduledSMS.sent_at.is_(None),
         ScheduledSMS.scheduled_time <= now
