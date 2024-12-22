@@ -16,11 +16,13 @@ next_id = 1
 scheduler = BackgroundScheduler()
 
 def check_and_send_sms():
+    print("DEBUG: APScheduler job started.")
     """
     1分おきに呼ばれるジョブ。
     送信予定時刻 <= 現在時刻 & 未送信のSMSを探してVonageで送信し、sent_atを更新する
     """
     now = datetime.utcnow()
+    print(f"check_and_send_sms called at {now}")
     for msg in scheduled_messages:
         print(f"DEBUG: checking msg.id={msg['id']} at {now}, scheduled={msg['scheduled_time']}")
         if msg["sent_at"] is None and msg["scheduled_time"] <= now:
