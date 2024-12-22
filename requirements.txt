@@ -1,7 +1,7 @@
 Flask==2.3.3
-Flask-SQLAlchemy==3.0.5
-psycopg2==2.9.7
+Flask-SQLAlchemy==3.1.1
+psycopg2-binary==2.9.7
 gunicorn==20.1.0
 APScheduler==3.9.1
-twilio==7.18.0
+twilio==9.4.1
 Flask-Migrate==4.0.4
