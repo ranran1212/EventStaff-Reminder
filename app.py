@@ -3,8 +3,10 @@ from flask import Flask, request, render_template, redirect, url_for
 from apscheduler.schedulers.background import BackgroundScheduler
 from datetime import datetime
 import os
+import pytz
+from send_sms import send_sms
 
-from send_sms import send_sms  # VonageでのSMS送信
+JST = pytz.timezone("Asia/Tokyo")
 
 app = Flask(__name__)
 
@@ -15,17 +17,25 @@ next_id = 1
 # APScheduler
 scheduler = BackgroundScheduler()
 
+def get_jst_now():
+    return datetime.now(JST)
+
+def parse_jst_datetime(input_str):
+    # "2024-12-31T09:00" → naive dt
+    naive_dt = datetime.strptime(input_str, "%Y-%m-%dT%H:%M")
+    return JST.localize(naive_dt)
+
 def check_and_send_sms():
     print("DEBUG: APScheduler job started.")
     """
     1分おきに呼ばれるジョブ。
     送信予定時刻 <= 現在時刻 & 未送信のSMSを探してVonageで送信し、sent_atを更新する
     """
-    now = datetime.utcnow()
+    now_jst = get_jst_now()
     print(f"check_and_send_sms called at {now}")
     for msg in scheduled_messages:
         print(f"DEBUG: checking msg.id={msg['id']} at {now}, scheduled={msg['scheduled_time']}")
-        if msg["sent_at"] is None and msg["scheduled_time"] <= now:
+        if msg["scheduled_time"] <= now_jst and msg["sent_at"] is None:
             try:
                 send_sms(msg["phone_number"], msg["message_body"])
                 msg["sent_at"] = datetime.utcnow()
