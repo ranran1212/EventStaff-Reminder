@@ -67,5 +67,12 @@ def index():
     # 一覧表示用: メモリ上の scheduled_messages を送る
     return render_template("index.html", scheduled_sms_list=scheduled_messages)
 
+@app.route("/delete", methods=["POST"])
+def delete_message():
+    message_id = int(request.form.get("message_id"))
+    global scheduled_messages
+    scheduled_messages = [ msg for msg in scheduled_messages if msg["id"] != message_id ]
+    return redirect(url_for("index"))
+
 if __name__ == "__main__":
     app.run(debug=True)
