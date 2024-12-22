@@ -32,9 +32,9 @@ def check_and_send_sms():
     送信予定時刻 <= 現在時刻 & 未送信のSMSを探してVonageで送信し、sent_atを更新する
     """
     now_jst = get_jst_now()
-    print(f"check_and_send_sms called at {now}")
+    print(f"check_and_send_sms called at {now_jst}")
     for msg in scheduled_messages:
-        print(f"DEBUG: checking msg.id={msg['id']} at {now}, scheduled={msg['scheduled_time']}")
+        print(f"DEBUG: checking msg.id={msg['id']} at {now_jst}, scheduled={msg['scheduled_time']}")
         if msg["scheduled_time"] <= now_jst and msg["sent_at"] is None:
             try:
                 send_sms(msg["phone_number"], msg["message_body"])
